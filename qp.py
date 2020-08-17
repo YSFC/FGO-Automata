@@ -4,7 +4,6 @@ import time
 import uiautomator2 as u2
 import os
 
-
 def connect():  # 连接adb与uiautomator
     try:
         # os.system 函数正常情况下返回是进程退出码，0为正常退出码，其余为异常

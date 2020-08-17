@@ -12,7 +12,6 @@ def connect():  # 连接adb与uiautomator
         if os.system('cd adb && adb connect 127.0.0.1:5554') != 0:
             print("连接模拟器失败")
             exit(1)
-        # os.system('cd adb & adb connect 127.0.0.1:7555') #mumu模拟器
         if os.system('python -m uiautomator2 init') != 0:
             print("初始化 uiautomator2 失败")
             exit(1)
