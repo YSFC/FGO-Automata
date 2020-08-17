@@ -2,10 +2,10 @@ import time
 import random
 from core import util, crds
 from core.Dynamica import Dynamica
-
+import uiautomator2 as u2
 
 class Automata():
-    def __init__(self, ckp: str, spt: str, sft=(0, 0), apl: (int, str) = (0, "")):
+    def __init__(self, ckp: str, spt: str, sft=(0, 0), apl: (int, str) = (0, ""), u2ConnectUrl = ""):
         """
         Parameters
         ----------
@@ -28,12 +28,18 @@ class Automata():
             shiki = Automata("assets/checkpoint.png", "assets/qp.png")
             bb = Automata("assets/checkpoint.png", "assets/qp.png", sft=(248, 0), apl=(1, "assets/silver.png"))
         """
+        self.device = u2.connect(u2ConnectUrl)
         self.shifts = sft
         self.checkpoint = ckp
         self.support = spt
         self.counts = apl[0]  # apple counts
         self.apple = apl[1]
+        self.imgDict = {}
 
+    def u2screenshot(self):
+        screen_shot = self.device.screenshot(format="opencv")
+        return screen_shot
+    
     # battle related
     def select_cards(self, cards: [int]):
         """ Select Order Cards
@@ -51,11 +57,12 @@ class Automata():
             select_cards([6,2]) # left the last 1 randomly choosen
             select_cards([1,2,3])
         """
-        while not util.standby(util.get_sh(self.shifts), crds.IMAGE["attack"]):
-            time.sleep(0.2)
+        while not util.standby(self.u2screenshot(), crds.IMAGE["attack"], mode = 1, imgDict = self.imgDict):
+            time.sleep(1)
         # tap ATTACK
-        self.tap(crds.ATTACK, 100, 100)
-        time.sleep(1.3)
+        time.sleep(0.2)
+        self.tap(crds.ATTACK, 10, 10)
+        time.sleep(1.5)
         while len(cards) < 3:
             x = random.randrange(1, 6)
             if x in cards:
@@ -69,7 +76,7 @@ class Automata():
 
     # new: self, skill, tar
     # combine select servant
-    def select_servant_skill(self, skill: int, tar: int = 0):
+    def select_servant_skill(self, skill: int, tar: int = 0, mode = 0):
         """ Select Servant Skill
         Parameters
         ----------
@@ -86,11 +93,16 @@ class Automata():
 
             select_servant_skill(1) # skill w/o target servants
             select_servant_skill(3, 2) # skill w/ target servants
-        """
-        while not util.standby(util.get_sh(self.shifts), crds.IMAGE["attack"]):
-            time.sleep(0.2)
-        self.tap(crds.SERVANT_SKILLS[skill-1], 5, 5)
-        time.sleep(1)
+        """        
+        while not util.standby(self.u2screenshot(), crds.IMAGE["attack"], mode = 1, imgDict = self.imgDict):
+            time.sleep(1)
+        if mode == 1:
+            print("最初技能等待")
+            time.sleep(2)
+        #time.sleep(0.2)
+        self.tap(crds.SERVANT_SKILLS[skill-1], 10, 10)
+        #self.tap(crds.SERVANT_SKILLS[skill-1], 10, 10)#来两次，老是莫名其妙没点上
+        time.sleep(0.2)
         if tar != 0:
             self.select_servant(tar)
 
@@ -134,7 +146,7 @@ class Automata():
             servant: int
         The id of the servant. 1~3 counted from left.
         """
-        while not util.standby(util.get_sh(self.shifts), crds.IMAGE["select"]):
+        while not util.standby(self.u2screenshot(), crds.IMAGE["select"]):
             time.sleep(0.2)
         self.tap(crds.TARGETS[servant-1], 100, 100)
 
@@ -148,7 +160,7 @@ class Automata():
             tar: int
         Servant id on the right side(1~3)
         """
-        while not util.standby(util.get_sh(self.shifts), crds.IMAGE["order_change"]):
+        while not util.standby(self.u2screenshot(), crds.IMAGE["order_change"]):
             time.sleep(0.2)
         self.tap(crds.SERVANTS[org-1], 90, 90)
         time.sleep(0.1)
@@ -157,7 +169,7 @@ class Automata():
         self.tap((950, 950), 100)  # confirm btn
 
     def toggle_master_skill(self):
-        while not util.standby(util.get_sh(self.shifts), crds.IMAGE["attack"]):
+        while not util.standby(self.u2screenshot(), crds.IMAGE["attack"]):
             time.sleep(0.2)
         self.tap(crds.MASTER)
 
@@ -207,13 +219,14 @@ class Automata():
         self.wait(self.checkpoint)
         if ckp is None:
             ckp = self.checkpoint
-        coordinates = util.get_crd(util.get_sh(self.shifts), ckp)
+        coordinates = util.get_crd(self.u2screenshot(), ckp)
         self.tap(coordinates[0], 100)
         time.sleep(0.2)
         # check whether out of AP
         # Not tested
         # in progress
-        if util.standby(util.get_sh(self.shifts), crds.IMAGE["no_ap"]):
+        time.sleep(1)
+        if util.standby(self.u2screenshot(), crds.IMAGE["no_ap"], imgDict = self.imgDict):
             if self.counts > 0:
                 self.eat_apple()
             else:
@@ -230,7 +243,7 @@ class Automata():
         time.sleep(0.3)
         if spt is None:
             spt = self.support
-        x = util.get_crd(util.get_sh(self.shifts), spt)
+        x = util.get_crd(self.u2screenshot(), spt)
         if len(x) == 0:
             self.tap((860, 430), 300, 100)
         else:
@@ -252,16 +265,15 @@ class Automata():
             Exception("Desired support not found!")
         Raises when reached maxium update times.
         """
-        time.sleep(0.3)
+        time.sleep(1.5)
         if spt is None:
             spt = self.support
-        x = util.get_crd(util.get_sh(self.shifts), spt)
+        x = util.get_crd(self.u2screenshot(), spt, imgDict = self.imgDict)
         counter = False
         times = tms
         while len(x) == 0:
             if not counter:
-                self.swipe((1000, 800), (1000, 300), 0.5 +
-                           0.1 * random.randrange(1, 10))
+                self.swipe((1000, 800), (1000, 300))
                 counter = True
             else:
                 update = self.update_support()
@@ -273,8 +285,8 @@ class Automata():
                 else:
                     time.sleep(3)
             time.sleep(0.5)
-            x = util.get_crd(util.get_sh(self.shifts), spt)
-        self.tap(x[0])
+            x = util.get_crd(self.u2screenshot(), spt)
+        self.tap((x[0][0], x[0][1]))
         print("[INFO] Support selected.")
 
     def update_support(self) -> bool:
@@ -284,11 +296,14 @@ class Automata():
             bool
         `True` if successfully updated, otherwise is `False`.
         """
-        btn = util.get_crd(util.get_sh(self.shifts),
+        btn = util.get_crd(self.u2screenshot(),
                            crds.IMAGE["update_support"])
-        self.tap(btn[0], 1, 1)
+        if len(btn) == 0:
+            self.tap((1272,877), 1, 1)
+        else:
+            self.tap(btn[0], 1, 1)
         time.sleep(0.1)
-        if util.standby(util.get_sh(self.shifts), crds.IMAGE["confirm_update"]):
+        if util.standby(self.u2screenshot(), crds.IMAGE["confirm_update"]):
             self.tap((1240, 840), 10, 5)
             return True
         else:
@@ -302,7 +317,7 @@ class Automata():
             int
         a number of current battle
         """
-        return util.get_battle_id(util.get_sh(self.shifts))
+        return util.get_battle_id(self.u2screenshot())
 
     def reached_battle(self, btl: int) -> bool:
         """ Reached Battle
@@ -342,7 +357,7 @@ class Automata():
         """
         while True:  # repeat until reached battle
             # wait for turn start
-            while not util.standby(util.get_sh(self.shifts), crds.IMAGE["attack"]):
+            while not util.standby(self.u2screenshot(), crds.IMAGE["attack"]):
                 time.sleep(0.2)
                 # end if finished battle
                 if util.standby("tmp.png", crds.IMAGE["finish"], 0.8):
@@ -356,21 +371,23 @@ class Automata():
 
     # after-battle related
     def finish_battle(self):
-        while not util.standby(util.get_sh(self.shifts), crds.IMAGE["item"]):
-            xs = util.get_crd(util.get_sh(self.shifts), crds.IMAGE["close"])
-            if len(xs) != 0:
-                self.tap(xs[0])
+        while not util.standby(self.u2screenshot(), crds.IMAGE["item"], mode = 2):
+            #这个是跳出羁绊礼装或者别的卡进行关闭用，狗粮和qp不需要打开
+            #就en浪费CPU
+            #xs = util.get_crd(util.get_sh(self.shifts), crds.IMAGE["close"])
+            #if len(xs) != 0:
+                #self.tap(xs[0])
             self.tap((960, 540), 400, 200)
             time.sleep(0.2)
         time.sleep(0.2)
-        x = util.get_crd(util.get_sh(self.shifts), crds.IMAGE["item"])
+        x = util.get_crd(self.u2screenshot(), crds.IMAGE["item"])
         self.tap(x[0])
         print("[INFO] Battle Finished.")
 
     # FLAWED
     def is_finished(self) -> bool:
         time.sleep(0.2)
-        return util.standby(util.get_sh(self.shifts), crds.IMAGE["finish"], 0.7)
+        return util.standby(self.u2screenshot(), crds.IMAGE["finish"], 0.7)
 
     # AP related
     # Not tested
@@ -388,19 +405,21 @@ class Automata():
         self.apple = apl
 
     def eat_apple(self):
-        x = util.get_crd(util.get_sh(self.shifts), self.apple)
-        self.tap(x[0])
+        x = util.get_crd(self.u2screenshot(), self.apple, imgDict = self.imgDict)
+        #print(x)
+        self.tap((x[0][0],x[0][1]))
         self.counts -= 1
         time.sleep(0.2)
-        y = util.get_crd(util.get_sh(self.shifts), crds.IMAGE["decide"])
+        y = util.get_crd(self.u2screenshot(), crds.IMAGE["decide"], imgDict = self.imgDict)
         self.tap(y[0])
 
     # others
     def start_battle(self):
-        while not util.standby(util.get_sh(self.shifts), crds.IMAGE["start"]):
-            time.sleep(0.2)
-        x = util.get_crd(util.get_sh(self.shifts), crds.IMAGE["start"])
-        self.tap(x[0])
+        while not util.standby(self.u2screenshot(), crds.IMAGE["start"], mode = 2, imgDict = self.imgDict):
+            time.sleep(0.4)
+        #x = util.get_crd(util.get_sh(self.shifts), crds.IMAGE["start"])
+        #self.tap(x[0])
+        self.tap((1775,1015), 1, 1)
         print("[INFO] Battle started.")
 
     def quick_start(self, advance=True):
@@ -415,6 +434,7 @@ class Automata():
 
         """
         self.select_checkpoint()
+        time.sleep(1)
         if advance:
             self.advance_support()
         else:
@@ -449,20 +469,18 @@ class Automata():
         self.support = spt
 
     def tap(self, crd: (int, int), i: int = 10, j: int = 10):
+
         x = crd[0] + self.shifts[0]
         y = crd[1] + self.shifts[1]
-        util.tap(util.shifter((x, y), i, j))
+        self.device.click(x,y)
 
-    def swipe(self, org: (int, int), tar: (int, int), delay, sfts: (int, int) = (10, 10)):
+    def swipe(self, org: (int, int), tar: (int, int)):
         original = (org[0] + self.shifts[0], org[1] + self.shifts[1])
         target = (tar[0] + self.shifts[0], tar[1] + self.shifts[1])
-        util.swipe(
-            util.shifter(original, sfts[0], sfts[1]),
-            util.shifter(target, sfts[0], sfts[1]),
-            delay)
+        self.device.swipe(original[0],original[1],target[0],target[1])
 
     def wait(self, pic: str):
-        while not util.standby(util.get_sh(self.shifts), pic):
+        while not util.standby(self.u2screenshot(), pic):
             time.sleep(0.2)
 
     def aquire_screenshot(self) -> str:
@@ -472,7 +490,7 @@ class Automata():
             str
         Path of the screenshot image
         """
-        return util.get_sh(self.shifts)
+        return self.u2screenshot()
 
     def __str__(self):
         return ("Checkpoint: " + self.checkpoint + "\n" +

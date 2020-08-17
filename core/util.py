@@ -1,37 +1,39 @@
 import os
 import cv2
+import uiautomator2 as u2
 import random
 import numpy as np
 from PIL import Image
 import logging
 from pytesseract import image_to_string
 
-# ADB related
-def tap(crd: (int, int)):
-    cmdTap = 'adb shell input tap {x} {y}'.format(
-        x=crd[0],
-        y=crd[1]
-    )
-    logging.info(cmdTap)
-    os.system(cmdTap)
+# # ADB related
+# def tap(crd: (int, int)):
+#     cmdTap = 'adb shell input tap {x} {y}'.format(
+#         x=crd[0],
+#         y=crd[1]
+#     )
+#     logging.info(cmdTap)
+#     print(cmdTap)
+#     os.system(cmdTap)
 
 
-def swipe(org: (int, int), tar: (int, int), delay):
-    cmdSwipe = 'adb shell input swipe {x1} {y1} {x2} {y2} {delay1}'.format(
-        x1=org[0],
-        y1=org[1],
-        x2=tar[0],
-        y2=tar[1],
-        delay1=int(delay*1000)
-    )
-    logging.info(cmdSwipe)
-    os.system(cmdSwipe)
+# def swipe(org: (int, int), tar: (int, int), delay):
+#     cmdSwipe = 'adb shell input swipe {x1} {y1} {x2} {y2} {delay1}'.format(
+#         x1=org[0],
+#         y1=org[1],
+#         x2=tar[0],
+#         y2=tar[1],
+#         delay1=int(delay*1000)
+#     )
+#     logging.info(cmdSwipe)
+#     os.system(cmdSwipe)
 
 
-def screenshot() -> str:
-    os.system('adb shell screencap -p /sdcard/sh.png')
-    os.system('adb pull /sdcard/sh.png .')
-    return "sh.png"
+#def screenshot() -> str:
+#    os.system('adb shell screencap -p /sdcard/sh.png')
+#    os.system('adb pull /sdcard/sh.png .')
+#    return "sh.png"
 
 
 # helper function
@@ -41,23 +43,47 @@ def shifter(ord: (int, int), i: int = 10, j: int = 10) -> (int, int):
 
 def split(path: str, edge: (int, int)):
     img = Image.open(path)
-    out = img.crop((edge[0], edge[1], edge[0]+1920, edge[1]+1080))
+    out = img
+    if edge[0] != 0 or edge[1] != 0:   
+        out = img.crop((edge[0], edge[1], edge[0]+1920, edge[1]+1080))
     out.save("tmp.png")
 
 
-def get_sh(edge: (int, int)) -> str:
-    screenshot()
-    split("sh.png", edge)
-    return "tmp.png"
+#def get_sh(edge: (int, int)) -> str:
+#    screenshot()
+#    split("sh.png", edge)
+#    return "tmp.png"
 
 
 # OpenCV related
-def standby(sh: str, tmp: str, threshold: float = 0.85) -> bool:
-    img = cv2.imread(sh, 0)
-    template = cv2.imread(tmp, 0)
-    res = cv2.matchTemplate(img, template, cv2.TM_CCOEFF_NORMED)
-    if (res >= threshold).any():
+def standby(screen_org, tmp: str, threshold: float = 0.85, mode: int = 0, imgDict: dict = {}) -> bool:
+    if mode == 0:
+        screen = screen_org
+        #cv2.imwrite('1111.png', screen, [int(cv2.IMWRITE_PNG_COMPRESSION), 9])
+    elif mode == 1:
+        screen = screen_org[200:500, 1620:1920]
+        #cv2.imwrite('1111.png', screen, [int(cv2.IMWRITE_PNG_COMPRESSION), 9])
+    elif mode == 2:
+        screen = screen_org[960:1080, 1420:1920]        
+
+
+    template = imgDict.get(tmp,None)
+    if type(template) == type(None):
+        template = cv2.imread(tmp, 1)
+        #template = cv2.cvtColor(template, cv2.COLOR_BGR2RGB)
+        #cv2.imwrite('222.png', template, [int(cv2.IMWRITE_PNG_COMPRESSION), 9])
+        imgDict[tmp] = template
+    
+    th, tw = template.shape[:2]    
+    res = cv2.matchTemplate(screen, template, cv2.TM_CCOEFF_NORMED)
+    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+    #if max_val >= threshold:
+        #x = 0 + max_loc[0] + tw // 2
+        #y = 0 + max_loc[1] + th // 2
+    if (max_val >= threshold):
+        print("matchTemplate True: %s at %f %f" % (tmp,max_loc[0],max_loc[1]))
         return True
+    print("matchTemplate False:" + tmp)
     return False
 
 
@@ -70,15 +96,23 @@ def check_color(sh: str, tmp: str, threshold: float = 0.8) -> bool:
     return False
 
 
-def get_crd(sh: str, tmp: str, threshold: float = 0.85) -> [(int, int)]:
-    img = cv2.imread(sh, 0)
-    template = cv2.imread(tmp, 0)
-    res = cv2.matchTemplate(img, template, cv2.TM_CCOEFF_NORMED)
-    pos = []
-    loc = np.where(res >= threshold)
-    for pt in zip(*loc[::-1]):
-        pos.append(pt)
-    return pos
+def get_crd(screen, tmp: str, threshold: float = 0.85, imgDict: dict = {}) -> [(int, int)]:
+    template = imgDict.get(tmp,None)
+    if type(template) == type(None):
+        template = cv2.imread(tmp, 1)
+        #template = cv2.cvtColor(template, cv2.COLOR_BGR2RGB)
+        imgDict[tmp] = template
+    th, tw = template.shape[:2]  # rows->h, cols->w
+    res = cv2.matchTemplate(screen, template, cv2.TM_CCOEFF_NORMED)
+
+    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+    if max_val >= threshold:
+        pos = [max_loc[0] + tw // 2, max_loc[1] + th // 2]
+        print("matchTemplate True: %s at %f %f" % (tmp, pos[0], pos[1]))
+        return [pos]
+    else:
+        print("matchTemplate False:" + tmp)
+        return []
 
 
 def get_battle_id(img_path: str):
