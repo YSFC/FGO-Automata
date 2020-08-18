@@ -154,11 +154,11 @@ bb.finish_battle()
 
 以下是模板图片的两个例子：
 
-![checkpoint](assets/event.png)
+![checkpoint](assets/Qp4.png)
 
 - 关卡模板图片
 
-![support](assets/Qp4.png)
+![support](assets/wucan.png)
 
 - 助战模板图片
 
