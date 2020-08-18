@@ -11,8 +11,8 @@
 
 需要的外部应用： *ADB*（已经带上不需要额外下）。 需要的Python Package： *PIL*, *OpenCV* 和 *numpy*
 
-1. Clone 这个 repo: ```git clone https://github.com/Meowcolm024/FGO-Automata.git```
-2. 安装必要的Python包: ```pip install -r requirements.txt```
+1. 安装必要的Python包: ```pip install -r requirements.txt```
+2. 要是安装失败运行“傻瓜安装.bat”
 
 ## 设定
 
