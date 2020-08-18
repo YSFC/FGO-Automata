@@ -9,27 +9,20 @@
 
 ## 安装
 
-需要的外部应用： *ADB*。 需要的Python Package： *PIL*, *OpenCV* 和 *numpy*
+需要的外部应用： *ADB*（已经带上不需要额外下）。 需要的Python Package： *PIL*, *OpenCV* 和 *numpy*
 
 1. Clone 这个 repo: ```git clone https://github.com/Meowcolm024/FGO-Automata.git```
-2. 安装 *ADB*
-    - (macOS): ```brew cask install android-platform-tools```
-    - Windows可以考虑使用Chocolately安装： ```choco install adb```
-3. 安装必要的Python包: ```pip install -r requirements.txt```
-4. 安装 *Tesseract* (`pytesseract`要用到的)
-   - macOS: ```brew install tesseract```
-   - Windows: 点击 [这里](https://github.com/tesseract-ocr/tesseract/wiki#windows)
+2. 安装必要的Python包: ```pip install -r requirements.txt```
 
 ## 设定
 
-对于*Windows*用户，双击`config.bat`以配置脚本。
+请学习python或者照例子改。例子是指gouliang.py以及qp.py
 
 ## 注意事项
 
 1. 需要**关闭**技能确认。
-2. 如果使用`config.bat`或`daemon.py`来配置脚本，需要保证能**3T**过关。
-3. 建议缩短敌人消失时间和使用二倍速
-4. 推荐分辨率为`1920x1080`，非16:9长宽比需要设定画面偏移（`shift`）
+2. 建议缩短敌人消失时间和使用二倍速
+4. 分辨率为`1920x1080`，其余的分辨率这边没考虑支持了。
 
 ## FGO-Automata Script
 
@@ -48,21 +41,15 @@ from core.Automata import Automata
 #### b. 建立 Class
 
 ```python
-shiki = Automata("assets/checkpoint.png", "assets/qp.png", (248, 0))
-```
-
-```python
-ryougi = Automata("assets/checkpoint.png", "assets/qp.png")
+bb = Automata("assets/Ember4.png", "assets/wucan.png")
 ```
 
 * 第一个参数为指向**关卡**模板图片的**路径**，第二个参数为指向**助战**模板图片的**路径**。
-* 第三个为可选参数， i如果您的屏幕分辨率是 *1920x1080*, 可以留空这个参数或者填上 `(0,0)`.
-* 假如您的游戏界面左右或上下有间隔（非标准16:9，有蓝色条纹什么的），请添加这样一个 `(x, y)`, *x* 指的是画面横向的偏移（真正游戏画面最左端的x坐标）， *y* 指的是画面纵向偏移。
 
 #### c. AP相关（可选）
 
 ```python
-shiki.set_apples(0, "assets.silver.png")
+bb.set_apples(0, "assets/gold.png")
 ```
 
 * 您可以不设置此项，则默认不会使用金苹果。
@@ -73,7 +60,7 @@ shiki.set_apples(0, "assets.silver.png")
 #### 1. 快速开始
 
 ```python
-shiki.quick_start()
+bb.quick_start()
 ```
 
 - 使用这个语句开始战斗
@@ -82,7 +69,7 @@ shiki.quick_start()
 #### 2. 重新设定关卡（可选）
 
 ```python
-shiki.select_checkpoint("assets/checkpoint2.png") # the argument is optional
+bb.select_checkpoint("assets/checkpoint2.png") # the argument is optional
 ```
 
 - 参数为模板图片路径
@@ -108,11 +95,11 @@ shiki.start_battle()
 #### 1. 选择指令卡
 
 ```python
-shiki.select_cards([7])
+bb.select_cards([7])
 ```
 
 ```python
-ryougi.select_cards([1,2,3])
+bb.select_cards([1,2,3])
 ```
 
 - 需要提供一个最多3个元素的数组，数字*1～5*为从左到右的五张普通指令卡，*6～8*为从左到右的3张宝具卡。您也可以不选满，这样剩下的卡会随机补充。
@@ -121,12 +108,12 @@ ryougi.select_cards([1,2,3])
 
 ```python
 # skill w/o target
-shiki.select_servant_skill(4)
+bb.select_servant_skill(4)
 ```
 
 ```python
 # with target Servant
-ryougi.select_servant_skill(2, 3)
+bb.select_servant_skill(2, 3)
 ```
 
 - 对于没有目标从者的技能（如“直死之魔眼”）传入一个参数。即*1～9*，从左往右数。
@@ -136,17 +123,17 @@ ryougi.select_servant_skill(2, 3)
 
 ```python
 # skill w/o target
-shiki.select_master_skill(2)
+bb.select_master_skill(2)
 ```
 
 ```python
 # with target Servant
-ryougi.select_master_skill(1, 3)
+bb.select_master_skill(1, 3)
 ```
 
 ```python
 # Order Change
-rin.select_master_skill(3, 1, 1)
+bb.select_master_skill(3, 1, 1)
 ```
 
 - 大体上同从者技能。*1～3*为从左往右数的三个御主技能。
@@ -157,21 +144,11 @@ rin.select_master_skill(3, 1, 1)
 
 ```python
 # finish
-shiki.finish_battle()
+bb.finish_battle()
 ```
 
-## 自动战斗
+## 自动战斗（这个没管，请稳定3t）
 
-```python
-# use_dynamica(target)
-shiki.use_dynamica(2)
-```
-
-- 参数`target`为目标battle数
-- 注：这是类似项目[FGO-One](https://github.com/Meowcolm024/FGO-One)的全自动战斗功能
-- 但是要注意`tesseract`可能会经常识别错误（应该在issue[#19](https://github.com/Meowcolm024/FGO-Automata/issues/19)里面修好了）
-
-> 目前`Dynamica`会忽略*EX攻击*,，*宝具卡*和*技能*
 
 ## 制作模板图片
 
@@ -181,7 +158,7 @@ shiki.use_dynamica(2)
 
 - 关卡模板图片
 
-![support](assets/sp2.png)
+![support](assets/Qp4.png)
 
 - 助战模板图片
 

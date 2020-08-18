@@ -3,6 +3,8 @@ import random
 from core import util, crds
 from core.Dynamica import Dynamica
 import uiautomator2 as u2
+import os
+
 
 class Automata():
     def __init__(self, ckp: str, spt: str, sft=(0, 0), apl: (int, str) = (0, ""), u2ConnectUrl = ""):
@@ -28,6 +30,11 @@ class Automata():
             shiki = Automata("assets/checkpoint.png", "assets/qp.png")
             bb = Automata("assets/checkpoint.png", "assets/qp.png", sft=(248, 0), apl=(1, "assets/silver.png"))
         """
+        if u2ConnectUrl == "":
+            urls = self.connect()
+            if len(urls) == 0:
+                raise Exception("模拟器没启动？")
+            u2ConnectUrl = urls[0]
         self.device = u2.connect(u2ConnectUrl)
         self.shifts = sft
         self.checkpoint = ckp
@@ -496,3 +503,35 @@ class Automata():
         return ("Checkpoint: " + self.checkpoint + "\n" +
                 "Support: " + self.support + "\n" +
                 "Shift: " + str(self.shifts))
+
+    def connect(self):  # 连接adb与uiautomator
+        try:
+            # os.system 函数正常情况下返回是进程退出码，0为正常退出码，其余为异常
+            # 雷电模拟器
+            if os.system('cd adb && adb connect 127.0.0.1:5554') != 0:
+                print("连接模拟器失败")
+                exit(1)
+            if os.system('python -m uiautomator2 init') != 0:
+                print("初始化 uiautomator2 失败")
+                exit(1)
+        except Exception as e:
+            print('连接失败, 原因: {}'.format(e))
+            exit(1)
+
+        result = os.popen('cd adb && adb devices')  # 返回adb devices列表
+        res = result.read()
+        lines = res.splitlines()[0:]
+        while lines[0] != 'List of devices attached ':
+            del lines[0]
+        del lines[0]  # 删除表头
+
+        device_dic = {}  # 存储设备状态
+        for i in range(0, len(lines) - 1):
+            lines[i], device_dic[lines[i]] = lines[i].split('\t')[0:]
+        lines = lines[0:-1]
+        for i in range(len(lines)):
+            if device_dic[lines[i]] != 'device':
+                del lines[i]
+        print(lines)
+        return lines
+
