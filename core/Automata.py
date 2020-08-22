@@ -67,7 +67,7 @@ class Automata():
         while not util.standby(self.u2screenshot(), crds.IMAGE["attack"], mode = 1, imgDict = self.imgDict):
             time.sleep(1)
         # tap ATTACK
-        time.sleep(0.2)
+        time.sleep(0.5)
         self.tap(crds.ATTACK, 10, 10)
         time.sleep(1.5)
         while len(cards) < 3:
@@ -377,7 +377,7 @@ class Automata():
             time.sleep(1)
 
     # after-battle related
-    def finish_battle(self):
+    def finish_battle(self, lxcj = True):
         while not util.standby(self.u2screenshot(), crds.IMAGE["item"], mode = 2):
             #这个是跳出羁绊礼装或者别的卡进行关闭用，狗粮和qp不需要打开
             #就en浪费CPU
@@ -389,6 +389,21 @@ class Automata():
         time.sleep(0.2)
         x = util.get_crd(self.u2screenshot(), crds.IMAGE["item"])
         self.tap(x[0])
+        if lxcj:
+            while not util.standby(self.u2screenshot(), crds.IMAGE["lxcj"]):
+                
+                self.tap((960, 540), 400, 200)
+                time.sleep(0.2)
+            time.sleep(0.2)
+            x = util.get_crd(self.u2screenshot(), crds.IMAGE["lxcj"])
+            self.tap(x[0])
+        time.sleep(2)
+        if util.standby(self.u2screenshot(), crds.IMAGE["no_ap"], imgDict = self.imgDict):
+            if self.counts > 0:
+                self.eat_apple()
+            else:
+                raise Exception("Out of AP!")
+        
         print("[INFO] Battle Finished.")
 
     # FLAWED
@@ -416,7 +431,7 @@ class Automata():
         #print(x)
         self.tap((x[0][0],x[0][1]))
         self.counts -= 1
-        time.sleep(0.2)
+        time.sleep(1)
         y = util.get_crd(self.u2screenshot(), crds.IMAGE["decide"], imgDict = self.imgDict)
         self.tap(y[0])
 
@@ -429,7 +444,7 @@ class Automata():
         self.tap((1775,1015), 1, 1)
         print("[INFO] Battle started.")
 
-    def quick_start(self, advance=True):
+    def quick_start(self, advance=True, lxcj=True):
         """ Quick Start
         Select the default `checkpoint`, `support` and start the battle.
 
@@ -440,13 +455,15 @@ class Automata():
         By default, it is `False`
 
         """
-        self.select_checkpoint()
-        time.sleep(1)
+        if not lxcj:
+            self.select_checkpoint()
+            time.sleep(1)
         if advance:
             self.advance_support()
         else:
             self.select_support()
-        self.start_battle()
+        if not lxcj:
+            self.start_battle()
 
     def reset_shifts(self, sft: (int, int)):
         """ Reset Shifts

@@ -79,7 +79,8 @@ IMAGE = map_dict(lambda x: IMAGE_BASE + x, {
     "item": "item.png",
     "close": "close.png",
     "decide": "decide.png",
-    "start": "start.png"
+    "start": "start.png",
+    "lxcj": "lxcj.png"
 })
 
 CARD_IMAGE_BASE = "assets/extra/"
